@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Info Windows</title>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      button.gm-ui-hover-effect {
+        /*margin: 0px !important;*/
+        top: 0 !important;
+        right: 0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="trainTrack.js"></script>
+    <script src="signals2.js"></script>
+    <script>
+
+      // This example displays a marker at the center of Australia.
+      // When the user clicks the marker, an info window opens.
+
+      function contentString(signalName, signalType, signalLocation, signalImage) {
+        var contentString = '<div id="content">'+
+            '<div id="siteNotice">'+
+            '</div>'+
+            '<h1 id="firstHeading" class="firstHeading">' + signalName + '</h1>'+
+            '<div id="bodyContent">'+
+            '<p>Type: ' + signalType + '<br>Location: 9.8221128, 46.7925869</p>'+
+            '<p>Location: 46° 58\' 4.398" N, 9° 33\' 15.702" E</p>'+
+            '<img src="' + signalImage + '" width="500">'+
+            '<p>'+
+            '(Photo taken 22 June, 2019 10:43:18)</p>'+
+            '</div>'+
+            '</div>';
+
+            return contentString;
+      }
+
+      function signalIcon(type) {
+        switch (type) {
+          case "main signal":
+            return "http://icons.iconarchive.com/icons/google/noto-emoji-travel-places/32/42571-vertical-traffic-light-icon.png";
+
+          case "distant signal":
+            return "http://icons.iconarchive.com/icons/mysitemyway/blue-jeans-social-media/32/delicious-square-icon.png";
+
+          default:
+            return "http://icons.iconarchive.com/icons/hopstarter/soft-scraps/16/Button-Blank-Yellow-icon.png";
+        }
+      }
+
+      function initMap() {
+        var landquart = {lat: 46.967950, lng: 9.554455};
+
+        var center = {lat: 46.898715, lng: 9.701944};
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 11,
+          center: center
+        });
+
+        var directionsService = new google.maps.DirectionsService();
+        var directionsRenderer = new google.maps.DirectionsRenderer();
+        directionsRenderer.setMap(map);
+
+
+        var trainTrack = new google.maps.Polyline({
+          path: trainTrackCoordinates,
+          geodesic: false,
+          strokeColor: '#009999',
+          strokeOpacity: 1.0,
+          strokeWeight: 7
+        });
+
+        trainTrack.setMap(map);
+
+
+        var infoWindows = [];
+        var infoWindow = new google.maps.InfoWindow();
+
+        for (var i = 0; i < signals.length; i++) {
+          var signal = {
+            id: signals[i].id,
+            type: signals[i].type,
+            filename: signals[i].filename,
+            position: {lat: signals[i].gps[0], long: signals[i].gps[1]}
+          };
+
+          var markerPos = {lat: signal.position.lat, lng: signal.position.long};
+          var markerPosString = "{lat: " + signal.position.lat + ", lng: " + signal.position.long + " }";
+          //var markerPos = new google.maps.LatLng(signals[i][1], signals[i][0]);
+
+          var marker = new google.maps.Marker({
+            position: markerPos,
+            map: map,
+            title: 'Uluru (Ayers Rock)' + i,
+            icon: signalIcon(signal.type),
+            stringPosition: markerPosString,
+            signalInfo: signal
+          });
+
+          
+          
+          /*
+          var infoWindow = new google.maps.InfoWindow({
+            content: contentString
+          });
+          infoWindows.push(infoWindow);
+          */
+          
+
+          /*
+          marker.addListener('click', function() {
+            infoWindow.open(map, marker);
+          });
+          */
+
+          google.maps.event.addListener(marker, 'click', function() {
+            infoWindow.close(); // Close previously opened infowindow
+            //infoWindow.setContent( "<div id='infowindow'><a href='javascript: calcRoute({lat: 46.967950, lng: 9.554455}, " + this.stringPosition + ")'>Bruh</a></div>");
+            infoWindow.setContent(contentString(this.signalInfo.id, this.signalInfo.type, this.signalInfo.position, this.signalInfo.filename));
+            console.log(signal);
+            infoWindow.open(map, this);
+            console.log(this.title);
+          });
+        }
+
+        // Close info windows when clicking the map
+        google.maps.event.addListener(map, "click", function(event) {
+            //for (var i = 0; i < ibArray.length; i++ ) {  //I assume you have your infoboxes in some array
+            //     ibArray[i].close();
+            //}
+
+            infoWindow.close();
+        });
+
+        /*
+        var marker = new google.maps.Marker({
+          position: landquart,
+          map: map,
+          title: 'Uluru (Ayers Rock)'
+        });
+        marker.addListener('click', function() {
+          infowindow.open(map, marker);
+        });
+        */
+      }
+
+      function calcRoute(start, destination, directionsService, directionsRenderer) {
+        var request = {
+          origin: start,
+          destination: destination,
+          travelMode: 'DRIVING'
+        };
+        directionsService.route(request, function(result, status) {
+          if (status == 'OK') {
+            directionsRenderer.setDirections(result);
+          }
+        });
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=APIKEY&callback=initMap">
+    </script>
+  </body>
+</html>
